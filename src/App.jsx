@@ -25,7 +25,7 @@ const DETAIL_FILTERS = [
 ];
 
 const LEGEND = [
-  { label: "No entry in CSV", color: colors.gray[100] },
+  { label: "No entry shown", color: colors.gray[100] },
   { label: "Only excluded / unmodeled", color: colors.gray[300] },
   { label: "1 active break", color: colors.primary[100] },
   { label: "2 active breaks", color: colors.primary[300] },
@@ -134,7 +134,7 @@ function App() {
       try {
         const response = await fetch("/senior_state_tax_breaks_2026.csv");
         if (!response.ok) {
-          throw new Error(`Failed to load CSV (${response.status})`);
+          throw new Error(`Failed to load data (${response.status})`);
         }
         const csvText = await response.text();
         const parsedRows = parseCsv(csvText);
@@ -165,7 +165,7 @@ function App() {
       <main className="page-shell">
         <section className="panel error-panel">
           <p className="eyebrow">Data load error</p>
-          <h1>We couldn’t open the 2026 tax-break CSV.</h1>
+          <h1>We couldn’t load the 2026 state tax break data.</h1>
           <p>{error}</p>
         </section>
       </main>
@@ -177,8 +177,8 @@ function App() {
       <main className="page-shell">
         <section className="panel loading-panel">
           <p className="eyebrow">Loading</p>
-          <h1>Building the state map from the CSV.</h1>
-          <p>Parsing the 2026 snapshot and grouping entries by state.</p>
+          <h1>Building the state tax break map.</h1>
+          <p>Loading the 2026 state-by-state view.</p>
         </section>
       </main>
     );
@@ -218,7 +218,7 @@ function App() {
   const ageOnlyCount = activeRows.filter(
     (row) => row.age_relevance === "age_only_eligibility",
   ).length;
-  const snapshotDate = rows[0]?.policy_date ? formatDate(rows[0].policy_date) : "2026 snapshot";
+  const policyDate = rows[0]?.policy_date ? formatDate(rows[0].policy_date) : "2026";
   const focusState = hoveredState ? jurisdictions[hoveredState] : selectedSummary;
 
   return (
@@ -248,22 +248,26 @@ function App() {
       <section className="panel hero-panel">
         <div className="hero-copy">
           <p className="eyebrow">PolicyEngine state tax map</p>
-          <h1>See where age-linked state tax breaks show up in the CSV.</h1>
+          <h1>See where age-linked state tax breaks show up across the country.</h1>
           <p className="hero-text">
-            This view turns the 2026 state tax-break snapshot into an interactive U.S.
-            map. Darker teal states have more active senior-focused provisions in the
-            CSV, while gray states only show excluded or unmodeled entries.
+            This map highlights senior-focused state tax breaks modeled in
+            PolicyEngine US for 2026. Darker teal states have more active provisions,
+            while gray states only show excluded or unmodeled programs.
           </p>
         </div>
 
         <div className="hero-meta">
           <div className="meta-chip">
-            <span>Snapshot date</span>
-            <strong>{snapshotDate}</strong>
+            <span>Policy date</span>
+            <strong>{policyDate}</strong>
           </div>
           <div className="meta-chip">
             <span>Focus state</span>
             <strong>{focusState.name}</strong>
+          </div>
+          <div className="meta-chip">
+            <span>Source</span>
+            <strong>PolicyEngine US</strong>
           </div>
         </div>
 
@@ -273,7 +277,7 @@ function App() {
             <strong>{activeJurisdictionCount}</strong>
           </article>
           <article className="summary-card">
-            <span>Active programs in the CSV</span>
+            <span>Active programs shown</span>
             <strong>{activeRows.length}</strong>
           </article>
           <article className="summary-card">
@@ -295,8 +299,8 @@ function App() {
               <h2>Active credits cluster in a limited set of states.</h2>
             </div>
             <p className="section-note">
-              {excludedOnlyCount} jurisdictions appear only as excluded or unmodeled in this
-              snapshot.
+              {excludedOnlyCount} jurisdictions currently appear only as excluded or
+              unmodeled.
             </p>
           </div>
 
@@ -324,7 +328,7 @@ function App() {
 
           <p className="map-caption">
             Click a state for the full entry list. Hovering temporarily previews that
-            jurisdiction in the header.
+            jurisdiction in the header. Source: PolicyEngine US.
           </p>
         </section>
 
@@ -374,8 +378,8 @@ function App() {
               <h2>{selectedSummary.name}</h2>
               <p className="detail-summary">
                 {selectedSummary.totalCount > 0
-                  ? `${selectedSummary.activeCount} active and ${selectedSummary.excludedCount} excluded entries in the snapshot.`
-                  : "No state-specific entries appear in this CSV snapshot."}
+                  ? `${selectedSummary.activeCount} active and ${selectedSummary.excludedCount} excluded entries are shown for this state.`
+                  : "No state-specific entries are shown for this state."}
               </p>
             </div>
 
