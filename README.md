@@ -2,7 +2,7 @@
 
 Interactive Vercel-ready site for exploring 2026 senior state tax breaks by state.
 
-The UI uses PolicyEngine’s shared design tokens from `@policyengine/design-system` and the official logo assets sourced from `policyengine-app-v2`.
+The UI uses PolicyEngine’s shared design tokens from `@policyengine/ui-kit` and the official logo assets sourced from `policyengine-app-v2`.
 
 The state tax break data shown in the app comes from PolicyEngine US.
 

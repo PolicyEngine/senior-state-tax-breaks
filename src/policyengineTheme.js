@@ -1,4 +1,4 @@
-import { colors, spacing, typography } from "@policyengine/design-system/tokens";
+import { colors, spacing, typography } from "@policyengine/ui-kit/legacy/tokens";
 
 export { colors, spacing, typography };
 
