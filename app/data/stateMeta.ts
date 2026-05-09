@@ -1,4 +1,10 @@
-export const JURISDICTIONS = [
+export interface Jurisdiction {
+  abbr: string;
+  name: string;
+  fips: string;
+}
+
+export const JURISDICTIONS: Jurisdiction[] = [
   { abbr: "AL", name: "Alabama", fips: "01" },
   { abbr: "AK", name: "Alaska", fips: "02" },
   { abbr: "AZ", name: "Arizona", fips: "04" },
@@ -52,10 +58,10 @@ export const JURISDICTIONS = [
   { abbr: "WY", name: "Wyoming", fips: "56" },
 ];
 
-export const STATE_NAMES = Object.fromEntries(
+export const STATE_NAMES: Record<string, string> = Object.fromEntries(
   JURISDICTIONS.map(({ abbr, name }) => [abbr, name]),
 );
 
-export const FIPS_TO_ABBR = Object.fromEntries(
+export const FIPS_TO_ABBR: Record<string, string> = Object.fromEntries(
   JURISDICTIONS.map(({ abbr, fips }) => [fips, abbr]),
 );

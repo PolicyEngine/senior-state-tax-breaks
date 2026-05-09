@@ -1,3 +1,19 @@
 .vercel
 node_modules
 dist
+
+# Next.js
+.next/
+out/
+next-env.d.ts.bak
+
+# TypeScript
+*.tsbuildinfo
+
+# Build outputs
+build/
+coverage/
+
+# IDE / OS
+.DS_Store
+*.log

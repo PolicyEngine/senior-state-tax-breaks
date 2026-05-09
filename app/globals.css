@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@import "@policyengine/ui-kit/theme.css";
+
 :root {
   color-scheme: light;
   background: var(--pe-color-bg-secondary);
