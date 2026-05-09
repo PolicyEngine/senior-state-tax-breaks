@@ -1,8 +1,20 @@
+"use client";
+
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { FIPS_TO_ABBR, STATE_NAMES } from "../data/stateMeta";
-import { colors } from "../policyengineTheme";
+import { colors } from "../lib/policyengineTheme";
+import type { JurisdictionSummary } from "../lib/jurisdictions";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+
+interface USMapProps {
+  jurisdictions: Record<string, JurisdictionSummary>;
+  selectedState: string | null;
+  hoveredState: string | null;
+  onStateHover: (abbr: string | null) => void;
+  onStateSelect: (abbr: string) => void;
+  getFill: (summary: JurisdictionSummary) => string;
+}
 
 export default function USMap({
   jurisdictions,
@@ -11,7 +23,7 @@ export default function USMap({
   onStateHover,
   onStateSelect,
   getFill,
-}) {
+}: USMapProps) {
   return (
     <div className="map-shell">
       <ComposableMap
@@ -56,7 +68,9 @@ export default function USMap({
                   style={{
                     default: {
                       fill,
-                      stroke: isSelected ? colors.primary[700] : colors.background.primary,
+                      stroke: isSelected
+                        ? colors.primary[700]
+                        : colors.background.primary,
                       strokeWidth: isSelected ? 2.2 : isHovered ? 1.4 : 0.9,
                       outline: "none",
                     },

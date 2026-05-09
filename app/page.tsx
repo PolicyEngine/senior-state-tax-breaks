@@ -1,30 +1,36 @@
+"use client";
+
 import { useDeferredValue, useEffect, useState } from "react";
 import USMap from "./components/USMap";
-import { JURISDICTIONS } from "./data/stateMeta";
+import type { CsvRow } from "./lib/csv";
 import { parseCsv } from "./lib/csv";
-import { colors } from "./policyengineTheme";
+import {
+  ACTIVE_STATUS,
+  buildJurisdictionIndex,
+} from "./lib/jurisdictions";
+import type { JurisdictionSummary } from "./lib/jurisdictions";
+import { applyThemeVariables, colors } from "./lib/policyengineTheme";
 
-const ACTIVE_STATUS = "included_active_2026";
-
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<string, string> = {
   included_active_2026: "Active in 2026",
   excluded_from_active_2026: "Excluded from active 2026",
 };
 
-const RELEVANCE_LABELS = {
+const RELEVANCE_LABELS: Record<string, string> = {
   premium: "Age changes the amount",
   age_only_eligibility: "Age is the main eligibility test",
   age_or_other_eligibility: "Age is one path to eligibility",
   not_active_or_not_modeled: "Not active or not modeled",
 };
 
-const DETAIL_FILTERS = [
-  { key: "all", label: "All entries" },
-  { key: "active", label: "Active only" },
-  { key: "excluded", label: "Excluded only" },
-];
+const DETAIL_FILTERS: { key: "all" | "active" | "excluded"; label: string }[] =
+  [
+    { key: "all", label: "All entries" },
+    { key: "active", label: "Active only" },
+    { key: "excluded", label: "Excluded only" },
+  ];
 
-const LEGEND = [
+const LEGEND: { label: string; color: string }[] = [
   { label: "No entry shown", color: colors.gray[100] },
   { label: "Only excluded / unmodeled", color: colors.gray[300] },
   { label: "1 active break", color: colors.primary[100] },
@@ -32,7 +38,7 @@ const LEGEND = [
   { label: "3+ active breaks", color: colors.primary[700] },
 ];
 
-function formatDate(dateString) {
+function formatDate(dateString: string): string {
   const date = new Date(`${dateString}T00:00:00`);
   return date.toLocaleDateString("en-US", {
     month: "long",
@@ -41,7 +47,7 @@ function formatDate(dateString) {
   });
 }
 
-function getFill(summary) {
+function getFill(summary: JurisdictionSummary): string {
   if (summary.activeCount >= 3) {
     return colors.primary[700];
   }
@@ -57,58 +63,10 @@ function getFill(summary) {
   return colors.gray[100];
 }
 
-function buildJurisdictionIndex(rows) {
-  const index = Object.fromEntries(
-    JURISDICTIONS.map(({ abbr, name }) => [
-      abbr,
-      {
-        abbr,
-        name,
-        entries: [],
-        activeEntries: [],
-        excludedEntries: [],
-        activeCount: 0,
-        excludedCount: 0,
-      },
-    ]),
-  );
-
-  rows.forEach((row) => {
-    const summary = index[row.state];
-    if (!summary) {
-      return;
-    }
-
-    summary.entries.push(row);
-    if (row.status === ACTIVE_STATUS) {
-      summary.activeEntries.push(row);
-    } else {
-      summary.excludedEntries.push(row);
-    }
-  });
-
-  Object.values(index).forEach((summary) => {
-    summary.entries.sort((left, right) => {
-      if (left.status !== right.status) {
-        return left.status === ACTIVE_STATUS ? -1 : 1;
-      }
-      return left.credit_name.localeCompare(right.credit_name);
-    });
-    summary.activeEntries.sort((left, right) =>
-      left.credit_name.localeCompare(right.credit_name),
-    );
-    summary.excludedEntries.sort((left, right) =>
-      left.credit_name.localeCompare(right.credit_name),
-    );
-    summary.activeCount = summary.activeEntries.length;
-    summary.excludedCount = summary.excludedEntries.length;
-    summary.totalCount = summary.entries.length;
-  });
-
-  return index;
-}
-
-function getDetailEntries(summary, filter) {
+function getDetailEntries(
+  summary: JurisdictionSummary,
+  filter: "all" | "active" | "excluded",
+): CsvRow[] {
   if (filter === "active") {
     return summary.activeEntries;
   }
@@ -118,16 +76,25 @@ function getDetailEntries(summary, filter) {
   return summary.entries;
 }
 
-function App() {
-  const [jurisdictions, setJurisdictions] = useState(null);
-  const [rows, setRows] = useState([]);
-  const [selectedState, setSelectedState] = useState(null);
-  const [hoveredState, setHoveredState] = useState(null);
+export default function HomePage() {
+  const [jurisdictions, setJurisdictions] = useState<Record<
+    string,
+    JurisdictionSummary
+  > | null>(null);
+  const [rows, setRows] = useState<CsvRow[]>([]);
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [hoveredState, setHoveredState] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [detailFilter, setDetailFilter] = useState("all");
-  const [error, setError] = useState(null);
+  const [detailFilter, setDetailFilter] = useState<
+    "all" | "active" | "excluded"
+  >("all");
+  const [error, setError] = useState<string | null>(null);
 
   const deferredSearch = useDeferredValue(searchTerm);
+
+  useEffect(() => {
+    applyThemeVariables();
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -139,21 +106,25 @@ function App() {
         const csvText = await response.text();
         const parsedRows = parseCsv(csvText);
         const nextJurisdictions = buildJurisdictionIndex(parsedRows);
-        const mostActive = Object.values(nextJurisdictions).sort((left, right) => {
-          if (right.activeCount !== left.activeCount) {
-            return right.activeCount - left.activeCount;
-          }
-          if (right.totalCount !== left.totalCount) {
-            return right.totalCount - left.totalCount;
-          }
-          return left.name.localeCompare(right.name);
-        })[0];
+        const mostActive = Object.values(nextJurisdictions).sort(
+          (left, right) => {
+            if (right.activeCount !== left.activeCount) {
+              return right.activeCount - left.activeCount;
+            }
+            if (right.totalCount !== left.totalCount) {
+              return right.totalCount - left.totalCount;
+            }
+            return left.name.localeCompare(right.name);
+          },
+        )[0];
 
         setRows(parsedRows);
         setJurisdictions(nextJurisdictions);
         setSelectedState(mostActive?.abbr ?? "AL");
       } catch (loadError) {
-        setError(loadError.message);
+        const message =
+          loadError instanceof Error ? loadError.message : "Unknown error";
+        setError(message);
       }
     }
 
@@ -165,7 +136,7 @@ function App() {
       <main className="page-shell">
         <section className="panel error-panel">
           <p className="eyebrow">Data load error</p>
-          <h1>We couldn’t load the 2026 state tax break data.</h1>
+          <h1>We couldn&rsquo;t load the 2026 state tax break data.</h1>
           <p>{error}</p>
         </section>
       </main>
@@ -214,11 +185,15 @@ function App() {
   const excludedOnlyCount = Object.values(jurisdictions).filter(
     (summary) => summary.activeCount === 0 && summary.excludedCount > 0,
   ).length;
-  const propertyCount = activeRows.filter((row) => row.credit_type === "property").length;
+  const propertyCount = activeRows.filter(
+    (row) => row.credit_type === "property",
+  ).length;
   const ageOnlyCount = activeRows.filter(
     (row) => row.age_relevance === "age_only_eligibility",
   ).length;
-  const policyDate = rows[0]?.policy_date ? formatDate(rows[0].policy_date) : "2026";
+  const policyDate = rows[0]?.policy_date
+    ? formatDate(rows[0].policy_date)
+    : "2026";
   const focusState = hoveredState ? jurisdictions[hoveredState] : selectedSummary;
 
   return (
@@ -230,12 +205,14 @@ function App() {
           target="_blank"
           rel="noreferrer"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="brand-mark"
             src="/assets/logos/policyengine/teal-square.svg"
             alt=""
             aria-hidden="true"
           />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="brand-wordmark"
             src="/assets/logos/policyengine/teal.svg"
@@ -248,11 +225,14 @@ function App() {
       <section className="panel hero-panel">
         <div className="hero-copy">
           <p className="eyebrow">PolicyEngine state tax map</p>
-          <h1>See where age-linked state tax breaks show up across the country.</h1>
+          <h1>
+            See where age-linked state tax breaks show up across the country.
+          </h1>
           <p className="hero-text">
             This map highlights senior-focused state tax breaks modeled in
-            PolicyEngine US for 2026. Darker teal states have more active provisions,
-            while gray states only show excluded or unmodeled programs.
+            PolicyEngine US for 2026. Darker teal states have more active
+            provisions, while gray states only show excluded or unmodeled
+            programs.
           </p>
         </div>
 
@@ -299,8 +279,8 @@ function App() {
               <h2>Active credits cluster in a limited set of states.</h2>
             </div>
             <p className="section-note">
-              {excludedOnlyCount} jurisdictions currently appear only as excluded or
-              unmodeled.
+              {excludedOnlyCount} jurisdictions currently appear only as
+              excluded or unmodeled.
             </p>
           </div>
 
@@ -327,8 +307,8 @@ function App() {
           />
 
           <p className="map-caption">
-            Click a state for the full entry list. Hovering temporarily previews that
-            jurisdiction in the header. Source: PolicyEngine US.
+            Click a state for the full entry list. Hovering temporarily
+            previews that jurisdiction in the header. Source: PolicyEngine US.
           </p>
         </section>
 
@@ -363,8 +343,12 @@ function App() {
                   <span className="state-name">{summary.name}</span>
                 </span>
                 <span className="state-row-stats">
-                  <span className="state-count active">{summary.activeCount} active</span>
-                  <span className="state-count muted">{summary.excludedCount} excluded</span>
+                  <span className="state-count active">
+                    {summary.activeCount} active
+                  </span>
+                  <span className="state-count muted">
+                    {summary.excludedCount} excluded
+                  </span>
                 </span>
               </button>
             ))}
@@ -383,7 +367,11 @@ function App() {
               </p>
             </div>
 
-            <div className="filter-group" role="tablist" aria-label="Detail filters">
+            <div
+              className="filter-group"
+              role="tablist"
+              aria-label="Detail filters"
+            >
               {DETAIL_FILTERS.map((filter) => (
                 <button
                   key={filter.key}
@@ -404,7 +392,10 @@ function App() {
           ) : (
             <div className="entry-grid">
               {detailEntries.map((entry) => (
-                <article className="entry-card" key={`${entry.state}-${entry.credit_name}-${entry.status}`}>
+                <article
+                  className="entry-card"
+                  key={`${entry.state}-${entry.credit_name}-${entry.status}`}
+                >
                   <div className="entry-head">
                     <span
                       className={`status-pill ${
@@ -417,7 +408,9 @@ function App() {
                   </div>
 
                   <h3>{entry.credit_name}</h3>
-                  <p className="entry-value">{entry.age_attributable_value_2026}</p>
+                  <p className="entry-value">
+                    {entry.age_attributable_value_2026}
+                  </p>
 
                   <dl className="entry-details">
                     <div>
@@ -442,5 +435,3 @@ function App() {
     </main>
   );
 }
-
-export default App;

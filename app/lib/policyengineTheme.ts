@@ -1,8 +1,12 @@
-import { colors, spacing, typography } from "@policyengine/ui-kit/legacy/tokens";
+import {
+  colors,
+  spacing,
+  typography,
+} from "@policyengine/ui-kit/legacy/tokens";
 
 export { colors, spacing, typography };
 
-const themeVariables = {
+const themeVariables: Record<string, string> = {
   "--pe-color-primary-50": colors.primary[50],
   "--pe-color-primary-100": colors.primary[100],
   "--pe-color-primary-200": colors.primary[200],
@@ -62,7 +66,7 @@ const themeVariables = {
   "--pe-line-height-relaxed": typography.lineHeight.relaxed,
 };
 
-export function applyThemeVariables() {
+export function applyThemeVariables(): void {
   if (typeof document === "undefined") {
     return;
   }

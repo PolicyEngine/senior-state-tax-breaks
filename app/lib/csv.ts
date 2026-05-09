@@ -1,6 +1,8 @@
-export function parseCsv(text) {
-  const rows = [];
-  let row = [];
+export type CsvRow = Record<string, string>;
+
+export function parseCsv(text: string): CsvRow[] {
+  const rows: string[][] = [];
+  let row: string[] = [];
   let cell = "";
   let inQuotes = false;
 
@@ -43,9 +45,14 @@ export function parseCsv(text) {
     rows.push(row);
   }
 
-  const [headers, ...dataRows] = rows.filter((values) =>
+  const filtered = rows.filter((values) =>
     values.some((value) => value.trim().length > 0),
   );
+  const [headers, ...dataRows] = filtered;
+
+  if (!headers) {
+    return [];
+  }
 
   return dataRows.map((values) =>
     Object.fromEntries(
