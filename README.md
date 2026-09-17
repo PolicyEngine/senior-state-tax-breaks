@@ -41,3 +41,7 @@ Import the repository into Vercel — Next.js is auto-detected, no `vercel.json`
 ## Data
 
 The app reads directly from the source data file at `public/senior_state_tax_breaks_2026.csv`, so updating that file updates the map and detail panels.
+
+## License
+
+Code in this repository is released under the [MIT License](LICENSE). Original text and figures are released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) with attribution to PolicyEngine. Third-party data and materials keep their own terms.
